@@ -132,14 +132,15 @@ finally set the window parameter 'no-other-window, see also `set-window-paramete
 
 (defun //init-notify-details-buffer ()
   (with-current-buffer (get-buffer //notification-detail-buffer-name)
-    (read-only-mode)
     (org-mode)
     (//init-notify-details-buffer-content)
     (use-local-map (copy-keymap org-mode-map))
-    (local-set-key "q" 'quit-window)))
+    (local-set-key "q" 'quit-window)
+    (local-set-key (kbd "<RET>") 'org-open-at-point)))
 
 (defun //insert-notify-detail (content title type)
   (with-current-buffer (//get-notify-details-buffer-create)
+    (setq buffer-read-only nil)
     (case type
       ;; notification
       ('notification
@@ -152,17 +153,41 @@ finally set the window parameter 'no-other-window, see also `set-window-paramete
        (search-forward-regexp "^[[:space:]]*?\\* Status\n" nil t)))
     
     (let ((start (point)))
-      (insert "\n\n")
-      (forward-line -2)
+      (insert "\n")
+      (forward-line -1)
       (insert (format "** %s\n" title))
       (insert (format "/%s/\n" (current-time-string)))
       (insert (format "%s\n" content))
       (indent-region start (point)))
+    (setq buffer-read-only t)
     ))
 
+(defun /list-notifications ()
+  "switch to the `emacs-notify//notification-detail-buffer-name` buffer window."
+  (interactive)
+  (display-buffer (//get-notify-details-buffer-create)
+		  '((display-buffer-pop-up-window)))
+  (select-window (get-buffer-window //notification-detail-buffer-name)))
+
+(defun /delete-notify-window ()
+  "close the window which displays notifications on the bottom."
+  (interactive)
+  (delete-window (//get-bottom-window)))
 )
 
-(cl-defun emacs-notify/notify (summary &key (temp t) (time emacs-notify//notification-surviving-time) quit-action detail title)
+(cl-defun emacs-notify/notify (summary &key title detail (temp t) (time emacs-notify//notification-surviving-time) quit-action)
+  "make notifications display on the bottom window, and send details of notifications to notification-details buffer, which can be viewed use `emacs-notify/list-notifications`.
+SUMMARY: summary of this notification.
+DETAIL: details of this notification.
+TITLE: title of this notification.
+TEMP: nil if this notification is a status(always display on the bottom window), else t.(default t) 
+TIME: how long this notification display on the bottom window, if TEMP is t. (default `emacs-notify//notification-surviving-time`)
+QUIT-ACTION: function which is called when this notification disappear on the bottom window. 
+==============
+\"disappear on the bottom window\" : 
+1. out of TIME if TEMP is t
+2. another notification occurs, no matter what TEMP is.
+"
   (let ((quit-func (emacs-notify//make-quit-function temp time quit-action)))
     (emacs-notify//bottom-window-notify summary emacs-notify//bottom-window-lines quit-func)
 

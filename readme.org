@@ -1,5 +1,18 @@
 * emacs-notify
 ** INSTALL
+  - git clone
+  - in /emacs/ eval
+    #+BEGIN_SRC 
+(package-install-file "/path/to/emacs-notify/emacs-notify.el")
+    #+END_SRC
 ** Screenshots
+   
 ** Usage
+*** Interactive Commands
+    - emacs-notify/list-notifications
+    - emacs-notify/delete-notify-window
+*** Functions
+    - emacs-notify/notify
+
+
 
